@@ -10,8 +10,7 @@ and take a trust but verify approach.**
 
 ## Licensing
 
-This app is a duplicate of the original, which can be found here:
-https://github.com/continuous-copilot/modernize-legacy-cobol-app
+This app is a duplicate of the original, which can be found [here](https://github.com/continuous-copilot/modernize-legacy-cobol-app).
 The original was licensed under the MIT license.
 This repository has been adjusted to fit more properly in Betabit's AI-assisted coding trainings.
 
