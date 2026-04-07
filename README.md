@@ -1,3 +1,9 @@
+#Licensing
+This app is a duplicate of the original, which can be found here:
+https://github.com/continuous-copilot/modernize-legacy-cobol-app
+The original was licensed under the MIT license.
+This repository has been adjusted to fit more properly in Betabit's AI-assisted coding trainings.
+
 # Modernizing a Cobol accounting system to a C# or Node.js application using GitHub Copilot
 
 This repo contains COBOL code for a simple accounting system. You can use GitHub Copilot to transform this code to a Node.js accounting system.
