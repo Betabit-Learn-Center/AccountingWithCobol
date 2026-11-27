@@ -416,3 +416,11 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# .NET / SQLite
+bin/
+obj/
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
