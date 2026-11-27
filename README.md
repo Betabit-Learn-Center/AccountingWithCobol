@@ -262,3 +262,53 @@ for #file:operations.js file. Use a popular testing framework and also provide a
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Modernisierte Version (ASP.NET Core + Vanilla JS)
+
+Die COBOL-Dateien (`main.cob`, `operations.cob`, `data.cob`) bleiben unverändert als Referenz.
+
+### Start
+
+```
+dotnet run --project src/Accounting.Web
+```
+
+Dann die ausgegebene URL (z. B. `http://localhost:5000`) öffnen. Tests: `dotnet test tests/Accounting.Tests`. Voraussetzung: .NET 8 SDK oder neuer.
+
+### API
+
+Alle Beträge sind ganze Zahlen in Hundertsteln (`100000` = 1000,00). Keine Gleitkommaarithmetik.
+
+- `GET /api/account/balance` → `{"balanceCents": n}`
+- `POST /api/account/credits` und `POST /api/account/debits` mit `{"amountCents": n}` → bei Erfolg `{"balanceCents": n}`
+- `400 invalid_amount`: fehlend, kein Integer, negativ, Dezimalzahl oder größer als 99999999
+- `409 overflow`: Saldo würde 99999999 überschreiten
+- `409 insufficient_funds`: Abbuchung größer als Saldo (exakt auf 0 ist erlaubt)
+- Fehlerantworten enthalten den unveränderten `balanceCents`. Der Betrag `0` ist erfolgreich und schreibt nichts.
+
+### Datenbank
+
+SQLite-Datei `accounting.db` (Pfad per Konfiguration `Database:Path`, z. B. `--Database:Path=/pfad/konto.db`). Genau ein Konto, einmalig mit 100000 (1000,00) angelegt; danach bleibt der Saldo über Neustarts erhalten. Buchungen sind je ein bedingtes `UPDATE … RETURNING`, daher gehen bei gleichzeitigen Anfragen keine Änderungen verloren und Grenzen werden nie verletzt. Zum Zurücksetzen die Datei löschen. Es gibt keine Buchungshistorie.
+
+### Nutzungsgrenzen
+
+Nur für lokale Nutzung: kein Login, keine Benutzerverwaltung, ein einziges Konto. Nicht ohne vorgeschalteten Zugriffsschutz im Netz oder öffentlich betreiben.
+
+### Bewusste Abweichungen zu COBOL
+
+Gemessen mit GnuCOBOL 3.1.2 (WSL Ubuntu), `cobc -x main.cob operations.cob data.cob`:
+
+| Fall | COBOL (gemessen) | Neu |
+|---|---|---|
+| Start, Gutschrift 200, Abbuchung 300 | 1200,00 → 900,00 | identisch |
+| Abbuchung exakt auf 0; danach 0,01 | 0,00; „Insufficient funds“ | identisch |
+| Überziehung | „Insufficient funds“, Saldo unverändert | 409 `insufficient_funds` |
+| Betrag 0 | „credited“, Saldo gleich | Erfolg, kein Schreiben |
+| Neustart | Saldo wieder 1000,00 (nur WORKING-STORAGE) | Saldo bleibt in SQLite |
+| Überlauf (+999000,00 auf 1000,00; Limit 999999,99) | Saldo wird still auf 0,00 abgeschnitten | 409 `overflow`; Limit 999999,99 (99999999) |
+| Betrag > 999999,99 (1000000,00) | stille Abschneidung, Saldo +0 | 400 `invalid_amount` |
+| Eingabe `abc` | als 0 gebucht | 400 / UI-Fehler |
+| Eingabe `-5` | als +5,00 gebucht (Vorzeichen verloren) | abgelehnt |
+| Eingabe `1.005` | stilles Abschneiden → +1,00 | UI lehnt >2 Nachkommastellen ab (kein Runden) |
+
+Die Alt-Eigenheit, dass `Operations` den `'READ'`-Literal (4 Zeichen) an `DataProgram` übergibt, dessen Linkage 6 Zeichen erwartet, wurde nicht übernommen; im Ergebnis funktionierte der COBOL-Lauf trotzdem.
